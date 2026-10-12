@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const usersTable = sqliteTable("users", {
   userId: text("user_id").primaryKey(),
@@ -34,20 +34,28 @@ export const otpLoginsTable = sqliteTable(
       "otp_hash_sha256_hex",
       sql`length(${t.otpHash}) = 64 AND ${t.otpHash} NOT GLOB '*[^a-f0-9]*'`,
     ),
+    // The scheduled cleanup deletes by `expires`; without this it walks every
+    // row to find the handful that have lapsed.
+    index("otp_logins_expires").on(t.expires),
   ],
 );
 
-export const sessionsTable = sqliteTable("sessions", {
-  id: text().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => usersTable.userId, { onDelete: "cascade" }),
-  channelId: text("channel_id")
-    .notNull()
-    .references(() => channelsTable.channelId, { onDelete: "cascade" }),
-  created: text().notNull(),
-  expires: text().notNull(),
-});
+export const sessionsTable = sqliteTable(
+  "sessions",
+  {
+    id: text().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => usersTable.userId, { onDelete: "cascade" }),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => channelsTable.channelId, { onDelete: "cascade" }),
+    created: text().notNull(),
+    expires: text().notNull(),
+  },
+  // Same as `otp_logins_expires`: the other half of the scheduled cleanup.
+  (t) => [index("sessions_expires").on(t.expires)],
+);
 
 /** Durable record that a user belongs to a channel — a user can be a member
  * of multiple channels on the same Slack workspace. Recorded either when they
@@ -67,7 +75,12 @@ export const channelMembersTable = sqliteTable(
       .references(() => usersTable.userId, { onDelete: "cascade" }),
     joined: text().notNull(),
   },
-  (t) => [uniqueIndex("channel_members_channel_user").on(t.channelId, t.userId)],
+  (t) => [
+    uniqueIndex("channel_members_channel_user").on(t.channelId, t.userId),
+    // `listChannelsForUser` filters on `user_id` alone, which the unique
+    // index above can't serve — it leads with `channel_id`.
+    index("channel_members_user").on(t.userId),
+  ],
 );
 
 export type ActivitySlot = {
@@ -117,6 +130,10 @@ export const activitiesTable = sqliteTable(
     created: text().notNull(),
   },
   (t) => [
+    // The dashboard poll's `where channel_id = ? and archived = 0 order by
+    // created` — `created` is in the index so the ordering comes out of it
+    // too, rather than a temp b-tree.
+    index("activities_channel_archived_created").on(t.channelId, t.archived, t.created),
     check("activities_persistent_no_end_time", sql`${t.persistent} = 0 OR ${t.endTime} IS NULL`),
     // The other half of the same rule. Its absence was load-bearing: the
     // Slack announcement asserts `endTime!` for a one-off.
@@ -220,6 +237,11 @@ export const activityBookingsTable = sqliteTable(
     created: text().notNull(),
   },
   (t) => [
+    // Every booking read filters by activity and slices by date: the
+    // dashboard twice per poll (what's still to come, then how much is
+    // past), and `listPastBookingsForActivity` again. Without this each of
+    // those walks every booking in every channel.
+    index("activity_bookings_activity_date").on(t.activityId, t.date),
     check(
       "activity_bookings_date_format",
       sql`${t.date} GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'`,

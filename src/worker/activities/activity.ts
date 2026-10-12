@@ -1,4 +1,16 @@
-import { and, asc, desc, eq, gte, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  or,
+  type SQLWrapper,
+  sql,
+} from "drizzle-orm";
 
 import { BASE_URL, DISPLAY_TIME_ZONE } from "../constants.ts";
 import { createDb, type Db } from "../db/db.ts";
@@ -338,26 +350,33 @@ const selectBookings = (db: Db) =>
 
 type BookingRow = Awaited<ReturnType<ReturnType<typeof selectBookings>["execute"]>>[number];
 
-/** Turns booking rows into what the client renders — attendees named
- * (channel members via `users`, guests by the name on their own row) and the
- * fixed location folded into one object. Returned in the order it was given,
- * so a caller holding the rows can pair the two up by index. */
-const shapeBookings = async (db: Db, rows: BookingRow[]) => {
-  const bookingIds = rows.map((booking) => booking.id);
-  const attendeeRows = bookingIds.length
-    ? await db
-        .select({
-          bookingId: activityBookingAttendeesTable.bookingId,
-          userId: activityBookingAttendeesTable.userId,
-          // Members are named via the users join; guests carry their own
-          // free-text name directly on the attendee row.
-          name: sql<string>`coalesce(${usersTable.name}, ${activityBookingAttendeesTable.name})`,
-        })
-        .from(activityBookingAttendeesTable)
-        .leftJoin(usersTable, eq(usersTable.userId, activityBookingAttendeesTable.userId))
-        .where(inArray(activityBookingAttendeesTable.bookingId, bookingIds))
-    : [];
+/** The attendees of whichever bookings `bookingIds` picks out, named —
+ * channel members via the `users` join, guests by the free-text name on
+ * their own row.
+ *
+ * Statement-only, and `bookingIds` is a subquery rather than a list of ids
+ * the worker read back first, so this can go in the same batch as the
+ * statement selecting the bookings instead of waiting a round trip for it. */
+const selectAttendees = (db: Db, bookingIds: SQLWrapper) =>
+  db
+    .select({
+      bookingId: activityBookingAttendeesTable.bookingId,
+      userId: activityBookingAttendeesTable.userId,
+      name: sql<string>`coalesce(${usersTable.name}, ${activityBookingAttendeesTable.name})`,
+    })
+    .from(activityBookingAttendeesTable)
+    .leftJoin(usersTable, eq(usersTable.userId, activityBookingAttendeesTable.userId))
+    .where(inArray(activityBookingAttendeesTable.bookingId, bookingIds));
 
+type AttendeeRow = Awaited<ReturnType<ReturnType<typeof selectAttendees>["execute"]>>[number];
+
+/** Turns booking rows into what the client renders — attendees named and the
+ * fixed location folded into one object. Returned in the order it was given,
+ * so a caller holding the rows can pair the two up by index.
+ *
+ * Pure: both callers fetch `attendeeRows` alongside the bookings rather than
+ * after them, so there's nothing here to await. */
+const shapeBookings = (rows: BookingRow[], attendeeRows: AttendeeRow[]) => {
   const attendeeNamesByBooking = new Map<string, string[]>();
   const attendeeIdsByBooking = new Map<string, string[]>();
   const guestNamesByBooking = new Map<string, string[]>();
@@ -400,7 +419,7 @@ const shapeBookings = async (db: Db, rows: BookingRow[]) => {
   }));
 };
 
-type ShapedBooking = Awaited<ReturnType<typeof shapeBookings>>[number];
+type ShapedBooking = ReturnType<typeof shapeBookings>[number];
 
 /** A persistent activity's finished bookings, newest first.
  *
@@ -409,17 +428,24 @@ type ShapedBooking = Awaited<ReturnType<typeof shapeBookings>>[number];
  * past is counted there and fetched here, once, when someone asks to see it. */
 export const listPastBookingsForActivity = async (env: Env, activityId: string) => {
   const db = createDb(env);
+  const today = todayInDisplayZone();
 
-  const rows = await selectBookings(db)
-    .where(
-      and(
-        eq(activityBookingsTable.activityId, activityId),
-        lt(activityBookingsTable.date, todayInDisplayZone()),
-      ),
-    )
-    .orderBy(desc(activityBookingsTable.date), desc(activityBookingsTable.from));
+  const isPast = and(
+    eq(activityBookingsTable.activityId, activityId),
+    lt(activityBookingsTable.date, today),
+  );
 
-  return shapeBookings(db, rows);
+  const [rows, attendeeRows] = await db.batch([
+    selectBookings(db)
+      .where(isPast)
+      .orderBy(desc(activityBookingsTable.date), desc(activityBookingsTable.from)),
+    selectAttendees(
+      db,
+      db.select({ id: activityBookingsTable.id }).from(activityBookingsTable).where(isPast),
+    ),
+  ]);
+
+  return shapeBookings(rows, attendeeRows);
 };
 
 export const getActivityById = async (env: Env, id: string) => {
@@ -432,38 +458,70 @@ export const getActivityById = async (env: Env, id: string) => {
 
 export const listActivitiesForChannel = async (env: Env, channelId: string, userId: string) => {
   const db = createDb(env);
+  const today = todayInDisplayZone();
 
-  const rows = await db
-    .select({
-      id: activitiesTable.id,
-      createdBy: activitiesTable.createdBy,
-      title: activitiesTable.title,
-      description: activitiesTable.description,
-      endTime: activitiesTable.endTime,
-      persistent: activitiesTable.persistent,
-      slotGranularity: activitiesTable.slotGranularity,
-      suggestedDates: activitiesTable.suggestedDates,
-      idealMemberCount: activitiesTable.idealMemberCount,
-      maxMemberCount: activitiesTable.maxMemberCount,
-      created: activitiesTable.created,
-      slots: activityAvailabilityTable.slots,
-      declined: activityAvailabilityTable.declined,
-      plusOne: activityAvailabilityTable.plusOne,
-    })
+  // Everything below filters on the same set of activities, and none of it
+  // needs a previous answer to say which: the id list goes as a subquery
+  // rather than an `in (?, ?, …)` the worker fills in from the round trip
+  // before. That's what lets all six statements go as one batch — against a
+  // hosted database this is the difference between six network hops and one.
+  const inChannel = and(
+    eq(activitiesTable.channelId, channelId),
+    eq(activitiesTable.archived, false),
+  );
+  const channelActivityIds = db
+    .select({ id: activitiesTable.id })
     .from(activitiesTable)
-    .leftJoin(
-      activityAvailabilityTable,
-      and(
-        eq(activityAvailabilityTable.activityId, activitiesTable.id),
-        eq(activityAvailabilityTable.userId, userId),
-      ),
-    )
-    .where(and(eq(activitiesTable.channelId, channelId), eq(activitiesTable.archived, false)))
-    .orderBy(activitiesTable.created);
+    .where(inChannel);
 
-  const activityIds = rows.map((row) => row.id);
-  const availabilityRows = activityIds.length
-    ? await db
+  // A persistent activity keeps collecting bookings forever and this payload
+  // is polled every few seconds, so it carries only what's still to come —
+  // the rest is counted separately and fetched on demand by
+  // `listPastBookingsForActivity`. A one-off keeps all of its handful: its
+  // card is a record of what was decided, past bookings included. Asking
+  // `activities.persistent` directly is what lets that be one statement
+  // rather than a filter assembled from ids already in hand.
+  const inBookingWindow = and(
+    inArray(activityBookingsTable.activityId, channelActivityIds),
+    or(gte(activityBookingsTable.date, today), eq(activitiesTable.persistent, false)),
+  );
+  const windowedBookingIds = db
+    .select({ id: activityBookingsTable.id })
+    .from(activityBookingsTable)
+    .innerJoin(activitiesTable, eq(activitiesTable.id, activityBookingsTable.activityId))
+    .where(inBookingWindow);
+
+  const [rows, availabilityRows, locationRows, bookingRows, pastCountRows, attendeeRows] =
+    await db.batch([
+      db
+        .select({
+          id: activitiesTable.id,
+          createdBy: activitiesTable.createdBy,
+          title: activitiesTable.title,
+          description: activitiesTable.description,
+          endTime: activitiesTable.endTime,
+          persistent: activitiesTable.persistent,
+          slotGranularity: activitiesTable.slotGranularity,
+          suggestedDates: activitiesTable.suggestedDates,
+          idealMemberCount: activitiesTable.idealMemberCount,
+          maxMemberCount: activitiesTable.maxMemberCount,
+          created: activitiesTable.created,
+          slots: activityAvailabilityTable.slots,
+          declined: activityAvailabilityTable.declined,
+          plusOne: activityAvailabilityTable.plusOne,
+        })
+        .from(activitiesTable)
+        .leftJoin(
+          activityAvailabilityTable,
+          and(
+            eq(activityAvailabilityTable.activityId, activitiesTable.id),
+            eq(activityAvailabilityTable.userId, userId),
+          ),
+        )
+        .where(inChannel)
+        .orderBy(activitiesTable.created),
+
+      db
         .select({
           activityId: activityAvailabilityTable.activityId,
           userId: activityAvailabilityTable.userId,
@@ -474,8 +532,46 @@ export const listActivitiesForChannel = async (env: Env, channelId: string, user
         })
         .from(activityAvailabilityTable)
         .innerJoin(usersTable, eq(usersTable.userId, activityAvailabilityTable.userId))
-        .where(inArray(activityAvailabilityTable.activityId, activityIds))
-    : [];
+        .where(inArray(activityAvailabilityTable.activityId, channelActivityIds)),
+
+      db
+        .select({
+          id: activityLocationsTable.id,
+          activityId: activityLocationsTable.activityId,
+          name: activityLocationsTable.name,
+          mapsUrl: activityLocationsTable.mapsUrl,
+        })
+        .from(activityLocationsTable)
+        .where(
+          and(
+            inArray(activityLocationsTable.activityId, channelActivityIds),
+            eq(activityLocationsTable.archived, false),
+          ),
+        )
+        .orderBy(activityLocationsTable.created),
+
+      selectBookings(db)
+        .innerJoin(activitiesTable, eq(activitiesTable.id, activityBookingsTable.activityId))
+        .where(inBookingWindow),
+
+      db
+        .select({
+          activityId: activityBookingsTable.activityId,
+          count: sql<number>`count(*)`,
+        })
+        .from(activityBookingsTable)
+        .innerJoin(activitiesTable, eq(activitiesTable.id, activityBookingsTable.activityId))
+        .where(
+          and(
+            inChannel,
+            eq(activitiesTable.persistent, true),
+            lt(activityBookingsTable.date, today),
+          ),
+        )
+        .groupBy(activityBookingsTable.activityId),
+
+      selectAttendees(db, windowedBookingIds),
+    ]);
 
   // Named rather than tallied: the client needs to show *who* picked a slot,
   // not just how many did — the same identities the Slack announcement
@@ -500,24 +596,6 @@ export const listActivitiesForChannel = async (env: Env, channelId: string, user
     responsesByActivity.set(row.activityId, list);
   }
 
-  const locationRows = activityIds.length
-    ? await db
-        .select({
-          id: activityLocationsTable.id,
-          activityId: activityLocationsTable.activityId,
-          name: activityLocationsTable.name,
-          mapsUrl: activityLocationsTable.mapsUrl,
-        })
-        .from(activityLocationsTable)
-        .where(
-          and(
-            inArray(activityLocationsTable.activityId, activityIds),
-            eq(activityLocationsTable.archived, false),
-          ),
-        )
-        .orderBy(activityLocationsTable.created)
-    : [];
-
   const locationsByActivity = new Map<string, { id: string; name: string; mapsUrl: string }[]>();
   for (const row of locationRows) {
     const list = locationsByActivity.get(row.activityId) ?? [];
@@ -525,47 +603,9 @@ export const listActivitiesForChannel = async (env: Env, channelId: string, user
     locationsByActivity.set(row.activityId, list);
   }
 
-  const today = todayInDisplayZone();
-  const persistentIds = rows.filter((row) => row.persistent).map((row) => row.id);
-  const oneOffIds = rows.filter((row) => !row.persistent).map((row) => row.id);
-
-  // A persistent activity keeps collecting bookings forever and this payload
-  // is polled every few seconds, so it carries only what's still to come —
-  // the rest is counted just below and fetched on demand by
-  // `listPastBookingsForActivity`. A one-off keeps all of its handful: its
-  // card is a record of what was decided, past bookings included.
-  const bookingRows = activityIds.length
-    ? await selectBookings(db).where(
-        and(
-          inArray(activityBookingsTable.activityId, activityIds),
-          oneOffIds.length > 0
-            ? or(
-                gte(activityBookingsTable.date, today),
-                inArray(activityBookingsTable.activityId, oneOffIds),
-              )
-            : gte(activityBookingsTable.date, today),
-        ),
-      )
-    : [];
-
-  const pastCountRows = persistentIds.length
-    ? await db
-        .select({
-          activityId: activityBookingsTable.activityId,
-          count: sql<number>`count(*)`,
-        })
-        .from(activityBookingsTable)
-        .where(
-          and(
-            inArray(activityBookingsTable.activityId, persistentIds),
-            lt(activityBookingsTable.date, today),
-          ),
-        )
-        .groupBy(activityBookingsTable.activityId)
-    : [];
   const pastCountByActivity = new Map(pastCountRows.map((row) => [row.activityId, row.count]));
 
-  const shapedBookings = await shapeBookings(db, bookingRows);
+  const shapedBookings = shapeBookings(bookingRows, attendeeRows);
 
   const bookedSlotsByActivity = new Map<string, Record<string, boolean>>();
   const bookingsByActivity = new Map<string, ShapedBooking[]>();

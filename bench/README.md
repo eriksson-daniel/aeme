@@ -42,6 +42,11 @@ millisecond and a chain of seven of them looks the same as one.
 `--explain` replays each captured statement (with its real arguments) under
 `EXPLAIN QUERY PLAN`. A `SCAN` line is a full table scan.
 
+A `db.batch(…)` sends its statements as one round trip, and the libsql
+protocol uploads each one separately and then refers to it by id — so the
+proxy keeps a `sql_id → sql` map to report what a batch actually ran, and
+drops the `BEGIN`/`COMMIT`/`ROLLBACK` it wraps itself in.
+
 Because Node strips types rather than checking them, `tsc -b` is what
 actually typechecks this directory — `tsconfig.bench.json` is wired into the
 root project references, so `yarn build` covers it.
@@ -62,6 +67,8 @@ root project references, so `yarn build` covers it.
 --sql               Print each round trip, in order, with what it cost.
 --explain           As --sql, plus every statement's query plan.
 --with-indexes      Apply the candidates in candidate-indexes.ts first.
+                    (That list is empty right now — the indexes it started
+                    with are in the schema.)
 --drop-indexes      Drop them again and exit.
 ```
 

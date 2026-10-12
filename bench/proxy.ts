@@ -31,26 +31,55 @@ export type Recorder = {
   close: () => Promise<void>;
 };
 
+/** The statements a batch wraps itself in. They're real round-trip content
+ * but say nothing about what the query did, so the summary leaves them out. */
+const TRANSACTION_CONTROL = /^\s*(begin|commit|rollback)\b/i;
+
 /** libsql pipelines look like `{ requests: [{ type, stmt | batch }] }`. We
  * only ever read the SQL out, and a shape we don't recognise is counted as a
- * round trip with no statements rather than treated as an error. */
-const extractStatements = (body: string): Statement[] => {
+ * round trip with no statements rather than treated as an error.
+ *
+ * `storedSql` carries `sql_id → sql` across calls: a batch sends each
+ * statement once as a `store_sql` request and then refers to it by id, in
+ * this pipeline or a later one, so a map scoped to one call would see a
+ * batch of anonymous ids. */
+const extractStatements = (body: string, storedSql: Map<number, string>): Statement[] => {
   const statements: Statement[] = [];
 
   const push = (stmt: unknown) => {
-    const parsed = stmt as { sql?: unknown; args?: { type?: string; value?: unknown }[] } | null;
-    if (typeof parsed?.sql !== "string") return;
+    const parsed = stmt as {
+      sql?: unknown;
+      sql_id?: unknown;
+      args?: { type?: string; value?: unknown }[];
+    } | null;
+    const sql =
+      typeof parsed?.sql === "string"
+        ? parsed.sql
+        : typeof parsed?.sql_id === "number"
+          ? storedSql.get(parsed.sql_id)
+          : undefined;
+    if (sql === undefined || TRANSACTION_CONTROL.test(sql)) return;
     // Hrana wraps every argument as `{ type, value }`; a null arrives as
     // `{ type: "null" }` with no value at all.
-    const args = (parsed.args ?? []).map((arg) => (arg?.type === "null" ? null : arg?.value));
-    statements.push({ sql: parsed.sql, args });
+    const args = (parsed?.args ?? []).map((arg) => (arg?.type === "null" ? null : arg?.value));
+    statements.push({ sql, args });
   };
 
   try {
     const parsed = JSON.parse(body) as {
-      requests?: { type?: string; stmt?: unknown; batch?: { steps?: { stmt?: unknown }[] } }[];
+      requests?: {
+        type?: string;
+        sql?: unknown;
+        sql_id?: unknown;
+        stmt?: unknown;
+        batch?: { steps?: { stmt?: unknown }[] };
+      }[];
     };
     for (const request of parsed.requests ?? []) {
+      if (request.type === "store_sql" && typeof request.sql_id === "number") {
+        if (typeof request.sql === "string") storedSql.set(request.sql_id, request.sql);
+        continue;
+      }
       if (request.stmt) push(request.stmt);
       for (const step of request.batch?.steps ?? []) push(step.stmt);
     }
@@ -82,6 +111,7 @@ export const startRecordingProxy = async (params: {
 }): Promise<Recorder> => {
   const target = new URL(params.target);
   let calls: Call[] = [];
+  const storedSql = new Map<number, string>();
 
   const server: Server = createServer((req, res) => {
     void (async () => {
@@ -101,7 +131,7 @@ export const startRecordingProxy = async (params: {
         async (upstreamRes) => {
           const responseBody = await readBody(upstreamRes);
           calls.push({
-            statements: extractStatements(decoder.decode(body)),
+            statements: extractStatements(decoder.decode(body), storedSql),
             durationMs: performance.now() - startedAt,
             requestBytes: body.byteLength,
             responseBytes: responseBody.byteLength,
