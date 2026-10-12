@@ -1,7 +1,34 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { client } from "../api.ts";
 import { activitiesQueryKey } from "./activities.ts";
+
+export const bookingHistoryQueryKey = (activityId: string) =>
+  ["bookings", "history", activityId] as const;
+
+/** An activity's bookings that have already happened — deliberately not part
+ * of the polled dashboard payload (see `listPastBookingsForActivity`), so it
+ * only runs once the page asks for it with `enabled`. */
+export const useBookingHistoryQuery = (activityId: string, enabled: boolean) =>
+  useQuery({
+    queryKey: bookingHistoryQueryKey(activityId),
+    queryFn: async () => {
+      const res = await client.activities[":id"].bookings.history.$get({
+        param: { id: activityId },
+      });
+      if (!res.ok) throw new Error("Failed to load past bookings.");
+      const { bookings } = await res.json();
+      return bookings;
+    },
+    enabled,
+  });
+
+/** Editing or removing a booking can change what's in the history as well as
+ * what's upcoming, so both go stale together. */
+const invalidateBookings = (queryClient: ReturnType<typeof useQueryClient>) => {
+  queryClient.invalidateQueries({ queryKey: activitiesQueryKey });
+  queryClient.invalidateQueries({ queryKey: ["bookings", "history"] });
+};
 
 export const useCreateBookingMutation = () => {
   const queryClient = useQueryClient();
@@ -34,9 +61,7 @@ export const useCreateBookingMutation = () => {
       if (!res.ok) throw new Error("Failed to create booking.");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: activitiesQueryKey });
-    },
+    onSuccess: () => invalidateBookings(queryClient),
   });
 };
 
@@ -72,9 +97,7 @@ export const useUpdateBookingMutation = () => {
       if (!res.ok) throw new Error("Failed to update booking.");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: activitiesQueryKey });
-    },
+    onSuccess: () => invalidateBookings(queryClient),
   });
 };
 
@@ -91,8 +114,6 @@ export const useDeleteBookingMutation = () => {
       if (!res.ok) throw new Error("Failed to delete booking.");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: activitiesQueryKey });
-    },
+    onSuccess: () => invalidateBookings(queryClient),
   });
 };

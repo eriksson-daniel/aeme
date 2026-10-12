@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "249eb230-6971-41a7-82d3-265ebdf7ad25",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "activities",
@@ -677,13 +675,9 @@
       "table": "users"
     },
     {
-      "columns": [
-        "channel_id"
-      ],
+      "columns": ["channel_id"],
       "tableTo": "channels",
-      "columnsTo": [
-        "channel_id"
-      ],
+      "columnsTo": ["channel_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -692,13 +686,9 @@
       "table": "activities"
     },
     {
-      "columns": [
-        "created_by"
-      ],
+      "columns": ["created_by"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "RESTRICT",
       "nameExplicit": false,
@@ -707,13 +697,9 @@
       "table": "activities"
     },
     {
-      "columns": [
-        "activity_id"
-      ],
+      "columns": ["activity_id"],
       "tableTo": "activities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -722,13 +708,9 @@
       "table": "activity_availability"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -737,13 +719,9 @@
       "table": "activity_availability"
     },
     {
-      "columns": [
-        "booking_id"
-      ],
+      "columns": ["booking_id"],
       "tableTo": "activity_bookings",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -752,13 +730,9 @@
       "table": "activity_booking_attendees"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -767,13 +741,9 @@
       "table": "activity_booking_attendees"
     },
     {
-      "columns": [
-        "activity_id"
-      ],
+      "columns": ["activity_id"],
       "tableTo": "activities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -782,13 +752,9 @@
       "table": "activity_bookings"
     },
     {
-      "columns": [
-        "created_by"
-      ],
+      "columns": ["created_by"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "RESTRICT",
       "nameExplicit": false,
@@ -797,13 +763,9 @@
       "table": "activity_bookings"
     },
     {
-      "columns": [
-        "location_id"
-      ],
+      "columns": ["location_id"],
       "tableTo": "activity_locations",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -812,13 +774,9 @@
       "table": "activity_bookings"
     },
     {
-      "columns": [
-        "activity_id"
-      ],
+      "columns": ["activity_id"],
       "tableTo": "activities",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -827,13 +785,9 @@
       "table": "activity_locations"
     },
     {
-      "columns": [
-        "channel_id"
-      ],
+      "columns": ["channel_id"],
       "tableTo": "channels",
-      "columnsTo": [
-        "channel_id"
-      ],
+      "columnsTo": ["channel_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -842,13 +796,9 @@
       "table": "channel_members"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -857,13 +807,9 @@
       "table": "channel_members"
     },
     {
-      "columns": [
-        "owner"
-      ],
+      "columns": ["owner"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "RESTRICT",
       "nameExplicit": false,
@@ -872,13 +818,9 @@
       "table": "channels"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -887,13 +829,9 @@
       "table": "otp_logins"
     },
     {
-      "columns": [
-        "channel_id"
-      ],
+      "columns": ["channel_id"],
       "tableTo": "channels",
-      "columnsTo": [
-        "channel_id"
-      ],
+      "columnsTo": ["channel_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -902,13 +840,9 @@
       "table": "otp_logins"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "users",
-      "columnsTo": [
-        "user_id"
-      ],
+      "columnsTo": ["user_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -917,13 +851,9 @@
       "table": "sessions"
     },
     {
-      "columns": [
-        "channel_id"
-      ],
+      "columns": ["channel_id"],
       "tableTo": "channels",
-      "columnsTo": [
-        "channel_id"
-      ],
+      "columnsTo": ["channel_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -932,90 +862,70 @@
       "table": "sessions"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "activities_pk",
       "table": "activities",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "activity_availability_pk",
       "table": "activity_availability",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "activity_booking_attendees_pk",
       "table": "activity_booking_attendees",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "activity_bookings_pk",
       "table": "activity_bookings",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "activity_locations_pk",
       "table": "activity_locations",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "channel_members_pk",
       "table": "channel_members",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "channel_id"
-      ],
+      "columns": ["channel_id"],
       "nameExplicit": false,
       "name": "channels_pk",
       "table": "channels",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "otp_hash"
-      ],
+      "columns": ["otp_hash"],
       "nameExplicit": false,
       "name": "otp_logins_pk",
       "table": "otp_logins",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "sessions_pk",
       "table": "sessions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "nameExplicit": false,
       "name": "users_pk",
       "table": "users",

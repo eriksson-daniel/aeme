@@ -6,6 +6,7 @@ import type { ActivitySlot } from "../../worker/db/schema.ts";
 import { ActivityLocations } from "../components/ActivityLocations.tsx";
 import { AvailabilityGrid } from "../components/AvailabilityGrid.tsx";
 import { BookingDetailsDialog } from "../components/BookingDetailsDialog.tsx";
+import { BookingHistory } from "../components/BookingHistory.tsx";
 import { DeleteActivityDialog } from "../components/DeleteActivityDialog.tsx";
 import { EditActivityDialog } from "../components/EditActivityDialog.tsx";
 import { PageContainer } from "../components/PageContainer.tsx";
@@ -161,9 +162,14 @@ const ActivityDetail = () => {
     handleChange([...slots, ...added]);
   };
 
+  // What a persistent activity carries is only what's still to come — its
+  // finished bookings are counted in `pastBookingCount` and fetched on demand
+  // by `BookingHistory`. A one-off's `bookings` are all of them, and its
+  // count is always 0.
   const bookings = [...activity.bookings].sort((a, b) =>
     (a.date + a.from).localeCompare(b.date + b.from),
   );
+  const totalBookings = bookings.length + activity.pastBookingCount;
 
   return (
     <PageContainer className="p-2 pb-10 md:px-6">
@@ -230,7 +236,7 @@ const ActivityDetail = () => {
             )}
             {activity.idealMemberCount && <Badge>Aiming for {activity.idealMemberCount}</Badge>}
             {activity.maxMemberCount && <Badge>Max {activity.maxMemberCount}</Badge>}
-            {bookings.length > 0 && <Badge variant="success">{bookings.length} booked</Badge>}
+            {totalBookings > 0 && <Badge variant="success">{totalBookings} booked</Badge>}
           </div>
         </header>
 
@@ -348,7 +354,15 @@ const ActivityDetail = () => {
 
         <Section
           title="Bookings"
-          description={bookings.length > 0 ? undefined : "Nothing booked yet."}
+          description={
+            totalBookings === 0
+              ? "Nothing booked yet."
+              : activity.pastBookingCount > 0
+                ? `${
+                    bookings.length > 0 ? `${bookings.length} coming up` : "Nothing coming up"
+                  } · ${totalBookings} in total`
+                : undefined
+          }
         >
           {bookings.length > 0 && (
             <ul className="flex flex-col gap-2">
@@ -382,6 +396,12 @@ const ActivityDetail = () => {
               ))}
             </ul>
           )}
+
+          <BookingHistory
+            activityId={activity.id}
+            count={activity.pastBookingCount}
+            idealMemberCount={activity.idealMemberCount}
+          />
         </Section>
         {isOwner && (
           <Section
@@ -393,7 +413,7 @@ const ActivityDetail = () => {
               <DeleteActivityDialog
                 activityId={activity.id}
                 title={activity.title}
-                bookingCount={bookings.length}
+                bookingCount={totalBookings}
                 onDeleted={() => navigate({ to: "/" })}
               />
             </div>

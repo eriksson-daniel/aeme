@@ -12,7 +12,10 @@ export const cleanupExpired = async (env: Env) => {
       .delete(otpLoginsTable)
       .where(lt(otpLoginsTable.expires, now))
       .returning({ otpHash: otpLoginsTable.otpHash }),
-    db.delete(sessionsTable).where(lt(sessionsTable.expires, now)).returning({ id: sessionsTable.id }),
+    db
+      .delete(sessionsTable)
+      .where(lt(sessionsTable.expires, now))
+      .returning({ id: sessionsTable.id }),
   ]);
 
   console.log(

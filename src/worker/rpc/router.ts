@@ -10,6 +10,7 @@ import {
   deleteActivity,
   getActivityById,
   listActivitiesForChannel,
+  listPastBookingsForActivity,
   updateActivity,
 } from "../activities/activity.ts";
 import { upsertAvailability, wouldExceedMax } from "../activities/availability.ts";
@@ -466,6 +467,23 @@ export const apiRouter = new Hono<{ Bindings: Env }>()
     });
 
     return c.json({ success: true });
+  })
+  // Bookings already past, which `GET /activities` leaves out for a
+  // persistent activity — loaded by the activity page only when someone asks
+  // to see the history.
+  .get("/activities/:id/bookings/history", async (c) => {
+    const sessionId = getCookie(c, SESSION_COOKIE_NAME);
+    const session = sessionId ? await getSessionMeta(c.env, sessionId) : null;
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const activityId = c.req.param("id");
+    const activity = await getActivityById(c.env, activityId);
+    if (!activity || activity.channelId !== session.channelId) {
+      return c.json({ error: "Not found" }, 404);
+    }
+
+    const bookings = await listPastBookingsForActivity(c.env, activityId);
+    return c.json({ bookings });
   })
   .post("/activities/:id/bookings", zValidator("json", createBookingSchema), async (c) => {
     const sessionId = getCookie(c, SESSION_COOKIE_NAME);

@@ -34,6 +34,10 @@ type Props = {
   idealMemberCount?: number | null;
   /** Where the edit link should return to once it's done. */
   from: "home" | "activity";
+  /** Whether the booking's owner is offered the edit link. False for a past
+   * booking shown from the history: the edit screen reads the booking out of
+   * the dashboard payload, which only carries what's still to come. */
+  editable?: boolean;
 };
 
 export const BookingDetailsDialog = ({
@@ -42,6 +46,7 @@ export const BookingDetailsDialog = ({
   trigger,
   idealMemberCount,
   from,
+  editable = true,
 }: Props) => {
   const { data } = useSessionQuery();
   const isOwner = data?.session?.userId === booking.createdBy;
@@ -130,7 +135,7 @@ export const BookingDetailsDialog = ({
 
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>Close</DialogClose>
-          {isOwner && (
+          {isOwner && editable && (
             <Button
               render={
                 <Link
