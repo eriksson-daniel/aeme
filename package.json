@@ -14,7 +14,9 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "bench": "node bench/run.ts",
+    "bench:clean": "node bench/run.ts --clean"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

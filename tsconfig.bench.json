@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.bench.tsbuildinfo",
+    "types": ["node", "vite/client", "@cloudflare/workers-types"]
+  },
+  "include": ["bench", "src/worker", "worker-configuration.d.ts"]
+}
