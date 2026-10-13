@@ -7,7 +7,9 @@ import {
   activityHasBookings,
   announceActivitySuggestion,
   createActivity,
+  decodePastBookingCursor,
   deleteActivity,
+  encodePastBookingCursor,
   getActivityById,
   listActivitiesForChannel,
   listPastBookingsForActivity,
@@ -45,6 +47,13 @@ import { getUserName } from "../users/user.ts";
 
 const switchChannelSchema = z.object({
   channelId: z.string().min(1),
+});
+
+/** The only query parameter the history route takes. Validated rather than
+ * read off `c.req.query` so the RPC client types it — an unvalidated
+ * parameter is invisible to `client.…$get`. */
+const bookingHistoryQuerySchema = z.object({
+  cursor: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -469,22 +478,37 @@ export const apiRouter = new Hono<{ Bindings: Env }>()
     return c.json({ success: true });
   })
   // Bookings already past, which `GET /activities` leaves out for a
-  // persistent activity — loaded by the activity page only when someone asks
-  // to see the history.
-  .get("/activities/:id/bookings/history", async (c) => {
-    const sessionId = getCookie(c, SESSION_COOKIE_NAME);
-    const session = sessionId ? await getSessionMeta(c.env, sessionId) : null;
-    if (!session) return c.json({ error: "Unauthorized" }, 401);
+  // persistent activity — loaded by the activity page a page at a time, only
+  // when someone asks to see the history. The total is not returned here: the
+  // page already knows it from `pastBookingCount` on the polled payload, so
+  // counting again per page would be work for an answer it already has.
+  //
+  // `cursor` is whatever the previous page's `nextCursor` was; absent means
+  // the first page.
+  .get(
+    "/activities/:id/bookings/history",
+    zValidator("query", bookingHistoryQuerySchema),
+    async (c) => {
+      const sessionId = getCookie(c, SESSION_COOKIE_NAME);
+      const session = sessionId ? await getSessionMeta(c.env, sessionId) : null;
+      if (!session) return c.json({ error: "Unauthorized" }, 401);
 
-    const activityId = c.req.param("id");
-    const activity = await getActivityById(c.env, activityId);
-    if (!activity || activity.channelId !== session.channelId) {
-      return c.json({ error: "Not found" }, 404);
-    }
+      const activityId = c.req.param("id");
+      const activity = await getActivityById(c.env, activityId);
+      if (!activity || activity.channelId !== session.channelId) {
+        return c.json({ error: "Not found" }, 404);
+      }
 
-    const bookings = await listPastBookingsForActivity(c.env, activityId);
-    return c.json({ bookings });
-  })
+      const { bookings, nextCursor } = await listPastBookingsForActivity(c.env, activityId, {
+        after: decodePastBookingCursor(c.req.valid("query").cursor),
+      });
+
+      return c.json({
+        bookings,
+        nextCursor: nextCursor ? encodePastBookingCursor(nextCursor) : null,
+      });
+    },
+  )
   .post("/activities/:id/bookings", zValidator("json", createBookingSchema), async (c) => {
     const sessionId = getCookie(c, SESSION_COOKIE_NAME);
     const session = sessionId ? await getSessionMeta(c.env, sessionId) : null;

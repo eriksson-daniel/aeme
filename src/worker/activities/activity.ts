@@ -421,31 +421,97 @@ const shapeBookings = (rows: BookingRow[], attendeeRows: AttendeeRow[]) => {
 
 type ShapedBooking = ReturnType<typeof shapeBookings>[number];
 
-/** A persistent activity's finished bookings, newest first.
+/** How many past bookings one page of history carries. The client asks for a
+ * page at a time, so this only bounds the request it doesn't send a size for. */
+export const PAST_BOOKINGS_PAGE_SIZE = 20;
+
+/** Where the next page of history resumes: the last booking of the page
+ * before it. A position rather than an offset, so a booking slipping from
+ * "upcoming" into "past" at midnight — which shifts every offset by one —
+ * can't make the next page skip a row or repeat one.
+ *
+ * `id` is in here only to break ties: two bookings can share a date and a
+ * start time, and without it the pair would be an unorderable pause point. */
+export type PastBookingCursor = { date: string; from: string; id: string };
+
+/** `date|from|id`, for travelling as one opaque query parameter. The parts
+ * are fixed-format (`YYYY-MM-DD`, `HH:MM`) or a UUID, so none can contain the
+ * separator. */
+export const encodePastBookingCursor = (cursor: PastBookingCursor) =>
+  `${cursor.date}|${cursor.from}|${cursor.id}`;
+
+/** Null for anything that isn't a cursor this encoded — a hand-typed or
+ * truncated one reads as "start from the beginning" rather than an error. */
+export const decodePastBookingCursor = (raw: string | undefined): PastBookingCursor | null => {
+  if (!raw) return null;
+  const [date, from, ...rest] = raw.split("|");
+  const id = rest.join("|");
+  if (!date || !from || !id) return null;
+  return { date, from, id };
+};
+
+/** One page of a persistent activity's finished bookings, newest first.
  *
  * Kept out of `listActivitiesForChannel` on purpose: that payload is polled
  * every few seconds and a standing activity's history only ever grows, so the
- * past is counted there and fetched here, once, when someone asks to see it. */
-export const listPastBookingsForActivity = async (env: Env, activityId: string) => {
+ * past is counted there and fetched here, a page at a time, when someone asks
+ * to see it. The count the client shows before any of this loads comes from
+ * that poll (`pastBookingCount`), not from here — so naming the total costs
+ * nothing extra.
+ *
+ * `nextCursor` is null on the last page. */
+export const listPastBookingsForActivity = async (
+  env: Env,
+  activityId: string,
+  params: { limit?: number; after?: PastBookingCursor | null } = {},
+) => {
   const db = createDb(env);
   const today = todayInDisplayZone();
+  const limit = params.limit ?? PAST_BOOKINGS_PAGE_SIZE;
 
   const isPast = and(
     eq(activityBookingsTable.activityId, activityId),
     lt(activityBookingsTable.date, today),
+    // Row-value comparison, matching the `order by` below exactly: everything
+    // that sorts strictly after the cursor's position.
+    params.after
+      ? sql`(${activityBookingsTable.date}, ${activityBookingsTable.from}, ${activityBookingsTable.id}) < (${params.after.date}, ${params.after.from}, ${params.after.id})`
+      : undefined,
   );
+
+  // One more than asked for: whether that row exists is how we know there's a
+  // page after this one, without counting the whole history to find out.
+  const pageIds = db
+    .select({ id: activityBookingsTable.id })
+    .from(activityBookingsTable)
+    .where(isPast)
+    .orderBy(
+      desc(activityBookingsTable.date),
+      desc(activityBookingsTable.from),
+      desc(activityBookingsTable.id),
+    )
+    .limit(limit);
 
   const [rows, attendeeRows] = await db.batch([
     selectBookings(db)
       .where(isPast)
-      .orderBy(desc(activityBookingsTable.date), desc(activityBookingsTable.from)),
-    selectAttendees(
-      db,
-      db.select({ id: activityBookingsTable.id }).from(activityBookingsTable).where(isPast),
-    ),
+      .orderBy(
+        desc(activityBookingsTable.date),
+        desc(activityBookingsTable.from),
+        desc(activityBookingsTable.id),
+      )
+      .limit(limit + 1),
+    selectAttendees(db, pageIds),
   ]);
 
-  return shapeBookings(rows, attendeeRows);
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const last = page[page.length - 1];
+
+  return {
+    bookings: shapeBookings(page, attendeeRows),
+    nextCursor: hasMore && last ? { date: last.date, from: last.from, id: last.id } : null,
+  };
 };
 
 export const getActivityById = async (env: Env, id: string) => {

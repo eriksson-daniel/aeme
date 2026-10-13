@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { client } from "../api.ts";
 import { activitiesQueryKey } from "./activities.ts";
@@ -8,18 +8,25 @@ export const bookingHistoryQueryKey = (activityId: string) =>
 
 /** An activity's bookings that have already happened — deliberately not part
  * of the polled dashboard payload (see `listPastBookingsForActivity`), so it
- * only runs once the page asks for it with `enabled`. */
+ * only runs once the page asks for it with `enabled`, and then a page at a
+ * time rather than the whole history at once.
+ *
+ * How many there are in total is *not* in here: it rides along on the polled
+ * activity as `pastBookingCount`, which is why the button can name the number
+ * before this query has run at all. */
 export const useBookingHistoryQuery = (activityId: string, enabled: boolean) =>
-  useQuery({
+  useInfiniteQuery({
     queryKey: bookingHistoryQueryKey(activityId),
-    queryFn: async () => {
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }) => {
       const res = await client.activities[":id"].bookings.history.$get({
         param: { id: activityId },
+        query: pageParam ? { cursor: pageParam } : {},
       });
       if (!res.ok) throw new Error("Failed to load past bookings.");
-      const { bookings } = await res.json();
-      return bookings;
+      return res.json();
     },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled,
   });
 
