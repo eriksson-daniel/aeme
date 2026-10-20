@@ -78,13 +78,7 @@ export const ResponderBreakdown = ({ activity }: Props) => {
                   {formatDate(date)}
                   <span className="text-muted-foreground">
                     {" · "}
-                    {headcount(
-                      onDate.map((response) => ({
-                        userId: response.userId,
-                        name: response.name,
-                        plusOne: response.plusOne,
-                      })),
-                    )}
+                    {headcount(onDate)}
                   </span>
                 </p>
                 {onDate.length === 0 ? (
@@ -96,8 +90,14 @@ export const ResponderBreakdown = ({ activity }: Props) => {
                       return (
                         <span
                           key={response.userId}
-                          className="rounded-full border border-emerald-800 bg-emerald-800/20 px-2 py-0.5 text-xs"
+                          className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-xs"
                         >
+                          {/* The key to the grid: which color is whose. */}
+                          <span
+                            aria-hidden
+                            className="size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: response.color }}
+                          />
                           {responderLabel(response)}
                           {ranges.length > 0 && (
                             <span className="text-muted-foreground"> {ranges.join(", ")}</span>

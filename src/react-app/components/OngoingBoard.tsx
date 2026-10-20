@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
-import { CheckIcon, ChevronRightIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { ChevronRightIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { ActivitySlot } from "../../worker/db/schema.ts";
 import { bookingOverlayPercent, bookingsForDay } from "../lib/booking-slots.ts";
 import {
+  cellPeople,
   guestCount,
   isSlotFull,
   type RespondingUser,
@@ -13,21 +14,16 @@ import {
   respondersBySlot,
   slotKey,
 } from "../lib/responders.ts";
-import {
-  bookedSlotOverlayClass,
-  bookingOverlayClass,
-  fullSlotClass,
-  mineWithOthersClass,
-  othersSlotClass,
-} from "../lib/slot-color.ts";
+import { bookedSlotOverlayClass, bookingOverlayClass, fullSlotClass } from "../lib/slot-color.ts";
 import { useTapOrDrag } from "../lib/tap-or-drag.ts";
 import type { ActivityWithAvailability } from "../queries/activities.ts";
 import { useUpsertAvailabilityMutation } from "../queries/availability.ts";
-import { useSessionQuery } from "../queries/session.ts";
+import { useViewer } from "../queries/session.ts";
 import { BookingInfoPopover } from "./BookingInfoPopover.tsx";
 import { EditActivityDialog } from "./EditActivityDialog.tsx";
 import { HourAxis } from "./HourAxis.tsx";
 import { MaxMemberCountNote } from "./MaxMemberCountNote.tsx";
+import { PersonSegments } from "./PersonSegments.tsx";
 import { Button } from "./ui/button.tsx";
 import { UpcomingBookings } from "./UpcomingBookings.tsx";
 
@@ -108,10 +104,10 @@ type CardProps = {
 const ActivityPickerCard = ({ activity, days }: CardProps) => {
   const [slots, setSlots] = useState<ActivitySlot[]>(activity.slots);
   const upsertAvailability = useUpsertAvailabilityMutation();
-  const { data } = useSessionQuery();
-  const isOwner = data?.session?.userId === activity.createdBy;
+  const viewer = useViewer();
+  const viewerId = viewer?.userId;
+  const isOwner = viewerId === activity.createdBy;
   const responders = respondersBySlot(activity.responses);
-  const viewerId = data?.session?.userId;
 
   const dirtyRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -256,9 +252,7 @@ const ActivityPickerCard = ({ activity, days }: CardProps) => {
               const dayResponders = responders[slotKey(dateStr)] ?? [];
               const count = dayResponders.length;
               const guests = guestCount(dayResponders);
-              // Fill intensity tracks other people only: a slot you alone
-              // picked shouldn't look as busy as one three of you picked.
-              const others = dayResponders.filter((person) => person.userId !== viewerId).length;
+              const people = cellPeople(dayResponders, viewer, selected);
               const booked = activity.bookedSlots[dateStr] ?? false;
               // Ongoing activities have no +1s, so the viewer is one seat.
               const full =
@@ -271,30 +265,25 @@ const ActivityPickerCard = ({ activity, days }: CardProps) => {
                     onClick={() => toggleDay(dateStr)}
                     title={namesTitle(dayResponders)}
                     className={cn(
-                      "flex h-8 w-full items-center justify-center rounded-sm border transition-colors",
+                      "relative flex h-8 w-full items-center justify-center overflow-hidden rounded-sm border transition-colors",
                       full
                         ? fullSlotClass
-                        : selected
-                          ? cn(
-                              "border-primary bg-primary text-primary-foreground",
-                              mineWithOthersClass(others),
-                            )
-                          : others > 0
-                            ? othersSlotClass(others)
-                            : "border-dashed border-muted-foreground/30 hover:border-primary/60 hover:bg-muted",
+                        : people.length > 0
+                          ? "border-transparent hover:brightness-110"
+                          : "border-dashed border-muted-foreground/30 hover:border-primary/60 hover:bg-muted",
                     )}
                   >
-                    {selected ? (
-                      <CheckIcon className="size-4" />
-                    ) : full ? (
+                    {full ? (
                       <span className="text-[10px] font-semibold tracking-wide uppercase">
                         Full
                       </span>
-                    ) : others === 0 ? (
+                    ) : people.length > 0 ? (
+                      <PersonSegments people={people} />
+                    ) : (
                       <span className="text-[10px] font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
                         æme!
                       </span>
-                    ) : null}
+                    )}
                   </button>
                   {(count >= 2 || guests > 0) && (
                     <span
@@ -337,11 +326,6 @@ const ActivityPickerCard = ({ activity, days }: CardProps) => {
             {days.map((d) => {
               const dateStr = toDateStr(d);
               const selectedHours = hourSetForDate(slots, dateStr);
-              const othersAt = (hour: number) =>
-                (responders[slotKey(dateStr, hour)] ?? []).filter(
-                  (person) => person.userId !== viewerId,
-                ).length;
-              const isFilled = (hour: number) => selectedHours.has(hour) || othersAt(hour) > 0;
               return (
                 <div
                   key={dateStr}
@@ -351,15 +335,10 @@ const ActivityPickerCard = ({ activity, days }: CardProps) => {
                   {HOURS.map((hour) => {
                     const selected = selectedHours.has(hour);
                     const hourResponders = responders[slotKey(dateStr, hour)] ?? [];
-                    const count = hourResponders.length;
-                    const others = othersAt(hour);
+                    const people = cellPeople(hourResponders, viewer, selected);
                     const full =
                       !selected &&
                       isSlotFull(hourResponders, viewerId, false, activity.maxMemberCount);
-                    // A filled cell's border matches its fill, so a run of
-                    // filled hours would merge into one block — draw the hour
-                    // line between them so you can still count the hours.
-                    const continuesRun = isFilled(hour) && isFilled(hour - 1);
                     return (
                       <div
                         key={hour}
@@ -387,31 +366,25 @@ const ActivityPickerCard = ({ activity, days }: CardProps) => {
                             ? fullSlotClass
                             : cn(
                                 "cursor-pointer",
-                                selected
-                                  ? cn("border-primary bg-primary", mineWithOthersClass(others))
-                                  : others > 0
-                                    ? othersSlotClass(others)
-                                    : "border-dashed border-muted-foreground/30 hover:border-primary/60 hover:bg-muted",
+                                // A transparent border rather than none, so a
+                                // run of filled hours keeps a gap between
+                                // them and you can still count the hours.
+                                people.length > 0
+                                  ? "border-transparent hover:brightness-110"
+                                  : "border-dashed border-muted-foreground/30 hover:border-primary/60 hover:bg-muted",
                               ),
-                          continuesRun && "border-t-background/40",
                         )}
                       >
-                        {/* Only worth a number once it's more than one
-                            person: a lone pick is already shown by the fill. */}
                         {full ? (
                           <span className="text-[9px] font-semibold tracking-wide uppercase">
                             Full
                           </span>
-                        ) : count >= 2 ? (
-                          <span className="text-[9px] font-medium text-primary-foreground">
-                            {count}
-                          </span>
+                        ) : people.length > 0 ? (
+                          <PersonSegments people={people} />
                         ) : (
-                          !selected && (
-                            <span className="text-[9px] font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-                              æme!
-                            </span>
-                          )
+                          <span className="text-[9px] font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                            æme!
+                          </span>
                         )}
                       </div>
                     );

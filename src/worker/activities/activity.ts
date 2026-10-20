@@ -218,6 +218,8 @@ export const announceActivitySuggestion = async (env: Env, activityId: string): 
 export type ActivityResponse = {
   userId: string;
   name: string;
+  /** The user's own color, which their part of a grid cell is drawn in. */
+  color: string;
   slots: ActivitySlot[];
   declined: boolean;
   /** Bringing one guest. Anonymous until someone books and types a name. */
@@ -592,6 +594,7 @@ export const listActivitiesForChannel = async (env: Env, channelId: string, user
           activityId: activityAvailabilityTable.activityId,
           userId: activityAvailabilityTable.userId,
           name: usersTable.name,
+          color: usersTable.color,
           slots: activityAvailabilityTable.slots,
           declined: activityAvailabilityTable.declined,
           plusOne: activityAvailabilityTable.plusOne,
@@ -655,6 +658,7 @@ export const listActivitiesForChannel = async (env: Env, channelId: string, user
     list.push({
       userId: row.userId,
       name: row.name,
+      color: row.color,
       slots: row.slots,
       declined: row.declined,
       plusOne: row.plusOne,

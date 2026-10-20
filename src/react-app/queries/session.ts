@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
 import { client } from "../api.ts";
+import type { Viewer } from "../lib/responders.ts";
 import { activitiesQueryKey } from "./activities.ts";
 import { channelQueryKey } from "./channel.ts";
 import { channelMembersQueryKey } from "./channelMembers.ts";
@@ -20,6 +21,36 @@ export const useSessionQuery = () =>
     queryKey: sessionQueryKey,
     queryFn: fetchSession,
   });
+
+/** The logged-in user as a grid draws them — see `cellPeople`. */
+export const useViewer = (): Viewer | undefined => {
+  const session = useSessionQuery().data?.session;
+  return session
+    ? { userId: session.userId, name: session.userName, color: session.userColor }
+    : undefined;
+};
+
+/** Changes the logged-in user's own color. Everything that draws people is
+ * refetched: the session (for the viewer's own cells) and activities (for
+ * their part of everyone else's view, including this one's). */
+export const useSetUserColorMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (color: string) => {
+      const res = await client.session.color.$put({ json: { color } });
+      if (!res.ok) throw new Error("Failed to change color.");
+      return res.json();
+    },
+    // Returned, so the mutation stays pending until the new color is on
+    // screen everywhere — the picker holds its draft until then.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: sessionQueryKey }),
+        queryClient.invalidateQueries({ queryKey: activitiesQueryKey }),
+      ]),
+  });
+};
 
 export const useSessionChannelsQuery = () =>
   useQuery({

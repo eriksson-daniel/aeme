@@ -7,12 +7,34 @@ type ResponseSlot = ActivityResponse["slots"][number];
 /** A channel member, with no answer attached. */
 export type Responder = { userId: string; name: string };
 
-/** Someone who has answered, and whether they're bringing a guest. */
-export type RespondingUser = Responder & { plusOne: boolean };
+/** Someone who has answered, the color their part of a grid cell is drawn
+ * in, and whether they're bringing a guest. */
+export type RespondingUser = Responder & { color: string; plusOne: boolean };
+
+/** The person looking at a grid, for drawing their own part of a cell. */
+export type Viewer = { userId: string; name: string; color: string };
+
+/** One stripe of a grid cell. `plusOne` is optional because the viewer's own
+ * stripe is drawn from local state, which only sometimes knows it. */
+export type CellPerson = Viewer & { plusOne?: boolean };
+
+/** Who to draw in a cell: everyone else who picked it, plus the viewer when
+ * their own selection includes it. The viewer's part comes from `selected` —
+ * local, possibly unsaved state — rather than the server's copy, so a click
+ * shows up before the save lands. Viewer first, so their stripe sits in the
+ * same place in every cell. */
+export const cellPeople = (
+  people: RespondingUser[],
+  viewer: CellPerson | undefined,
+  selected: boolean,
+): CellPerson[] => {
+  const others = people.filter((person) => person.userId !== viewer?.userId);
+  return selected && viewer ? [viewer, ...others] : others;
+};
 
 /** Heads rather than rows: a +1 is another person at the table, and that's
  * what gets compared against the activity's ideal headcount. */
-export const headcount = (people: RespondingUser[]) =>
+export const headcount = (people: Pick<RespondingUser, "plusOne">[]) =>
   people.length + people.filter((person) => person.plusOne).length;
 
 /** "Karl +1" / "Karl" — the label used wherever a responder is named. */
@@ -55,7 +77,12 @@ export const respondersBySlot = (
     for (const slot of response.slots) {
       for (const key of keysForSlot(slot)) {
         const list = bySlot[key] ?? [];
-        list.push({ userId: response.userId, name: response.name, plusOne: response.plusOne });
+        list.push({
+          userId: response.userId,
+          name: response.name,
+          color: response.color,
+          plusOne: response.plusOne,
+        });
         bySlot[key] = list;
       }
     }
@@ -136,6 +163,7 @@ export const availableForBooking = (
     .map((response) => ({
       userId: response.userId,
       name: response.name,
+      color: response.color,
       plusOne: response.plusOne,
     }));
 };
@@ -153,6 +181,7 @@ export const splitByResponse = (
     .map((response) => ({
       userId: response.userId,
       name: response.name,
+      color: response.color,
       plusOne: response.plusOne,
     }));
   const declined = responses
@@ -160,6 +189,7 @@ export const splitByResponse = (
     .map((response) => ({
       userId: response.userId,
       name: response.name,
+      color: response.color,
       plusOne: response.plusOne,
     }));
   const noAnswer = members.filter((member) => !byUserId.has(member.userId));

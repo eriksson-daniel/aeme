@@ -43,7 +43,15 @@ import {
 } from "../auth/session.ts";
 import { addChannelMember, listChannelMembers, listChannelsForUser } from "../channels/channel.ts";
 import { getChannelInfo, getChannelMembers } from "../slack/channels.ts";
-import { getUserName } from "../users/user.ts";
+import { USER_COLOR_PATTERN } from "../users/colors.ts";
+import { getUserName, setUserColor } from "../users/user.ts";
+
+const userColorSchema = z.object({
+  color: z
+    .string()
+    .transform((color) => color.toLowerCase())
+    .pipe(z.string().regex(USER_COLOR_PATTERN)),
+});
 
 const switchChannelSchema = z.object({
   channelId: z.string().min(1),
@@ -277,6 +285,15 @@ export const apiRouter = new Hono<{ Bindings: Env }>()
 
     await switchSessionChannel(c.env, sessionId, channelId);
     return c.json({ success: true });
+  })
+  .put("/session/color", zValidator("json", userColorSchema), async (c) => {
+    const sessionId = getCookie(c, SESSION_COOKIE_NAME);
+    const session = sessionId ? await getSessionMeta(c.env, sessionId) : null;
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const { color } = c.req.valid("json");
+    await setUserColor(c.env, session.userId, color);
+    return c.json({ color });
   })
   .post("/login", zValidator("form", loginSchema), async (c) => {
     const { otp } = c.req.valid("form");

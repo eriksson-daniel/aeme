@@ -2,9 +2,9 @@ import { cn } from "cn";
 import { useEffect, useRef } from "react";
 
 import { type ActivityResponse, respondersBySlot, slotKey } from "../lib/responders.ts";
-import { othersSlotClass } from "../lib/slot-color.ts";
 import { useTapOrDrag } from "../lib/tap-or-drag.ts";
 import type { ActivityWithAvailability } from "../queries/activities.ts";
+import { PersonSegments } from "./PersonSegments.tsx";
 
 // Same window the availability grids offer, so the strip can't show hours
 // nobody was ever able to pick.
@@ -140,14 +140,18 @@ export const BookingAvailabilityStrip = ({
                       onSelectRange(formatHour(hour), formatHour(hour + 1));
                     }}
                     className={cn(
-                      "flex h-10 w-full cursor-pointer items-center justify-center border text-[10px] font-medium transition-colors",
+                      "relative flex h-10 w-full cursor-pointer items-center justify-center border transition-colors",
                       count > 0
-                        ? othersSlotClass(count)
-                        : "border-dashed border-muted-foreground/30 text-muted-foreground hover:bg-muted",
-                      selectedHours.has(hour) && "ring-2 ring-primary ring-inset",
+                        ? "border-transparent hover:brightness-110"
+                        : "border-dashed border-muted-foreground/30 hover:bg-muted",
                     )}
                   >
-                    {count > 0 ? count : ""}
+                    <PersonSegments people={hourResponders} />
+                    {/* Drawn over the stripes: an inset ring on the button
+                        itself would sit underneath them. */}
+                    {selectedHours.has(hour) && (
+                      <span className="pointer-events-none absolute inset-0 ring-2 ring-primary ring-inset" />
+                    )}
                   </button>
                   {booked && (
                     <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-green-500" />

@@ -38,6 +38,7 @@ export function setSessionCookie(c: Context, session: { id: string; expires: str
 export type SessionMeta = {
   userId: string;
   userName: string;
+  userColor: string;
   channelId: string;
   channelName: string;
   expires: string;
@@ -50,6 +51,7 @@ export async function getSessionMeta(env: Env, sessionId: string): Promise<Sessi
     .select({
       userId: sessionsTable.userId,
       userName: usersTable.name,
+      userColor: usersTable.color,
       channelId: sessionsTable.channelId,
       channelName: channelsTable.name,
       expires: sessionsTable.expires,

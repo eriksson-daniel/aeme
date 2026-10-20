@@ -1,11 +1,24 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-export const usersTable = sqliteTable("users", {
-  userId: text("user_id").primaryKey(),
-  name: text().notNull(),
-  created: text().notNull(),
-});
+export const usersTable = sqliteTable(
+  "users",
+  {
+    userId: text("user_id").primaryKey(),
+    name: text().notNull(),
+    /** Lowercase `#rrggbb`, used to tell people apart in availability grids.
+     * Handed out from `USER_COLOR_PALETTE` when the row is created (see
+     * `ensureUserStatement`), and changeable by the user afterwards. */
+    color: text().notNull(),
+    created: text().notNull(),
+  },
+  (t) => [
+    check(
+      "users_color_hex",
+      sql`${t.color} GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'`,
+    ),
+  ],
+);
 
 export const channelsTable = sqliteTable("channels", {
   channelId: text("channel_id").primaryKey(),

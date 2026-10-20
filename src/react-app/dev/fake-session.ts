@@ -1,10 +1,12 @@
 import type { SessionMeta } from "../../worker/auth/session.ts";
+import { USER_COLOR_PALETTE } from "../../worker/users/colors.ts";
 
 const STORAGE_KEY = "aeme:dev-fake-session";
 
 const FAKE_SESSION: SessionMeta = {
   userId: "dev-user",
   userName: "Dev User",
+  userColor: USER_COLOR_PALETTE[0],
   channelId: "C0C3KKW19MK",
   channelName: "dev",
   expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),

@@ -1,5 +1,7 @@
 import { createClient, type Client, type InStatement } from "@libsql/client";
 
+import { USER_COLOR_PALETTE } from "../src/worker/users/colors.ts";
+
 /** Every row this harness writes carries this prefix in its primary key, so
  * cleanup can be exact rather than a `delete from`. Nothing the real app
  * creates can collide with it: ids elsewhere are UUIDs or Slack ids. */
@@ -150,8 +152,13 @@ export const seed = async (client: Client, scale: Scale): Promise<Fixture> => {
   const totalUsers = spec.channels * spec.usersPerChannel;
   for (let u = 0; u < totalUsers; u++) {
     users.push({
-      sql: "insert into users (user_id, name, created) values (?, ?, ?)",
-      args: [`${BENCH_PREFIX}U${pad(u, 5)}`, `Bench User ${u}`, now],
+      sql: "insert into users (user_id, name, color, created) values (?, ?, ?, ?)",
+      args: [
+        `${BENCH_PREFIX}U${pad(u, 5)}`,
+        `Bench User ${u}`,
+        USER_COLOR_PALETTE[u % USER_COLOR_PALETTE.length],
+        now,
+      ],
     });
   }
 

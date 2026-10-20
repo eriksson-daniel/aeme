@@ -5,21 +5,15 @@ import { useEffect, useRef, useState } from "react";
 
 import type { ActivitySlot } from "../../worker/db/schema.ts";
 import { bookingOverlayPercent, bookingsForDay } from "../lib/booking-slots.ts";
-import type { RespondingUser } from "../lib/responders.ts";
-import { guestCount, isSlotFull, responderLabel, slotKey } from "../lib/responders.ts";
-import {
-  bookedSlotOverlayClass,
-  bookingOverlayClass,
-  fullSlotClass,
-  mineWithOthersClass,
-  othersSlotClass,
-  othersSlotFillClass,
-} from "../lib/slot-color.ts";
+import type { RespondingUser, Viewer } from "../lib/responders.ts";
+import { cellPeople, guestCount, isSlotFull, responderLabel, slotKey } from "../lib/responders.ts";
+import { bookedSlotOverlayClass, bookingOverlayClass, fullSlotClass } from "../lib/slot-color.ts";
 import { useTapOrDrag } from "../lib/tap-or-drag.ts";
 import type { ActivityWithAvailability } from "../queries/activities.ts";
 import { BookingInfoPopover } from "./BookingInfoPopover.tsx";
 import { HourAxis } from "./HourAxis.tsx";
 import { MaxMemberCountNote } from "./MaxMemberCountNote.tsx";
+import { PersonSegments } from "./PersonSegments.tsx";
 import { Button } from "./ui/button.tsx";
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 8); // 08:00–23:00, each cell covers one hour
@@ -67,9 +61,9 @@ type Props = {
   readOnly?: boolean;
   /** Everyone who picked each slot, keyed by `slotKey`, the viewer included. */
   responders?: Record<string, RespondingUser[]>;
-  /** Used to split "others" out of the counts for the fill intensity, which is
-   * about how many *more* people want a slot you've already picked. */
-  viewerId?: string;
+  /** Whoever is looking: their own part of a cell is drawn from `value`
+   * rather than `responders`, and they don't count against a full slot. */
+  viewer?: Viewer;
   /** Whether each slot has an actual booking, keyed the same way. */
   bookedSlots?: Record<string, boolean>;
   bookings?: ActivityWithAvailability["bookings"];
@@ -92,7 +86,7 @@ export const AvailabilityGrid = ({
   onChange,
   readOnly = false,
   responders = {},
-  viewerId,
+  viewer,
   bookedSlots = {},
   bookings = [],
   idealMemberCount,
@@ -101,6 +95,10 @@ export const AvailabilityGrid = ({
   onVisibleDatesChange,
 }: Props) => {
   const today = startOfDay(new Date());
+  const viewerId = viewer?.userId;
+  // The viewer's own stripe, labelled "+1" like everyone else's when they're
+  // bringing someone.
+  const viewerInCell = viewer && { ...viewer, plusOne: viewerPlusOne };
 
   const fixedDays =
     suggestedDates && suggestedDates.length > 0
@@ -219,9 +217,7 @@ export const AvailabilityGrid = ({
             const dayResponders = responders[slotKey(dateStr)] ?? [];
             const count = dayResponders.length;
             const guests = guestCount(dayResponders);
-            // Fill intensity tracks other people only: a slot you alone picked
-            // shouldn't look as busy as one three of you picked.
-            const others = dayResponders.filter((person) => person.userId !== viewerId).length;
+            const people = cellPeople(dayResponders, viewerInCell, selected);
             const booked = bookedSlots[dateStr] ?? false;
             const full =
               !selected && isSlotFull(dayResponders, viewerId, viewerPlusOne, maxMemberCount);
@@ -237,17 +233,20 @@ export const AvailabilityGrid = ({
                     full
                       ? fullSlotClass
                       : selected
-                        ? cn(
-                            "border-primary bg-primary text-primary-foreground",
-                            mineWithOthersClass(others),
-                          )
-                        : others > 0
-                          ? othersSlotClass(others)
-                          : "hover:bg-muted",
+                        ? "border-primary ring-1 ring-primary"
+                        : "hover:bg-muted",
+                    // Room under the label for the people strip.
+                    people.length > 0 && !full && "pb-5",
                     readOnly && "disabled:opacity-60",
                   )}
                 >
                   {formatDayLabel(d)}
+                  {!full && (
+                    <PersonSegments
+                      people={people}
+                      className="top-auto h-4 overflow-hidden rounded-b-[inherit]"
+                    />
+                  )}
                   {full && (
                     <span className="text-[10px] leading-none font-semibold tracking-wide uppercase">
                       Full
@@ -256,7 +255,7 @@ export const AvailabilityGrid = ({
                   {selected && (
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute -right-1 bottom-1.5 origin-bottom-right -rotate-45 text-[10px] leading-none font-semibold"
+                      className="pointer-events-none absolute -right-1 bottom-6 origin-bottom-right -rotate-45 text-[10px] leading-none font-semibold text-primary"
                     >
                       æme!
                     </span>
@@ -343,10 +342,7 @@ export const AvailabilityGrid = ({
                 {HOURS.map((hour) => {
                   const selected = hourSetForDate(dateStr).has(hour);
                   const hourResponders = responders[slotKey(dateStr, hour)] ?? [];
-                  const count = hourResponders.length;
-                  const others = hourResponders.filter(
-                    (person) => person.userId !== viewerId,
-                  ).length;
+                  const people = cellPeople(hourResponders, viewerInCell, selected);
                   const full =
                     !selected &&
                     isSlotFull(hourResponders, viewerId, viewerPlusOne, maxMemberCount);
@@ -372,29 +368,22 @@ export const AvailabilityGrid = ({
                         setHour(dateStr, hour, !selected);
                       }}
                       className={cn(
-                        "flex h-6 items-center justify-center border border-border/50",
+                        "relative flex h-6 items-center justify-center border border-border/50",
                         full
                           ? fullSlotClass
                           : cn(
-                              readOnly ? "cursor-not-allowed" : "cursor-pointer hover:bg-muted",
-                              selected
-                                ? cn("bg-primary", mineWithOthersClass(others))
-                                : others > 0 && othersSlotFillClass(others),
+                              readOnly ? "cursor-not-allowed" : "cursor-pointer",
+                              !readOnly &&
+                                (people.length > 0 ? "hover:brightness-110" : "hover:bg-muted"),
                             ),
                       )}
                     >
-                      {/* Only worth a number once it's more than one person:
-                          a lone pick is already shown by the cell's fill. */}
                       {full ? (
                         <span className="text-[9px] font-semibold tracking-wide uppercase">
                           Full
                         </span>
                       ) : (
-                        count >= 2 && (
-                          <span className="text-[9px] font-medium text-primary-foreground">
-                            {count}
-                          </span>
-                        )
+                        <PersonSegments people={people} />
                       )}
                     </div>
                   );

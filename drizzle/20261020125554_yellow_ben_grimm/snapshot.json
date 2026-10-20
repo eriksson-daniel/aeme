@@ -1,0 +1,1236 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "9314889a-bbb1-4f85-9eb7-43cc95d16964",
+  "prevIds": ["f7b9da07-0108-4d3a-8524-ce76839950eb"],
+  "ddl": [
+    {
+      "name": "activities",
+      "entityType": "tables"
+    },
+    {
+      "name": "activity_availability",
+      "entityType": "tables"
+    },
+    {
+      "name": "activity_booking_attendees",
+      "entityType": "tables"
+    },
+    {
+      "name": "activity_bookings",
+      "entityType": "tables"
+    },
+    {
+      "name": "activity_locations",
+      "entityType": "tables"
+    },
+    {
+      "name": "channel_members",
+      "entityType": "tables"
+    },
+    {
+      "name": "channels",
+      "entityType": "tables"
+    },
+    {
+      "name": "otp_logins",
+      "entityType": "tables"
+    },
+    {
+      "name": "sessions",
+      "entityType": "tables"
+    },
+    {
+      "name": "users",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "title",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "end_time",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "persistent",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'day'",
+      "generated": null,
+      "name": "slot_granularity",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "suggested_dates",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ideal_member_count",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "max_member_count",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "slack_message_ts",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "archived",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "activities"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "activity_id",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "slots",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "declined",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "plus_one",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated",
+      "entityType": "columns",
+      "table": "activity_availability"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "booking_id",
+      "entityType": "columns",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "activity_id",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "from",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "to",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "location",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "location_id",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "slack_message_ts",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "activity_bookings"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "activity_locations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "activity_id",
+      "entityType": "columns",
+      "table": "activity_locations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "activity_locations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "maps_url",
+      "entityType": "columns",
+      "table": "activity_locations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "archived",
+      "entityType": "columns",
+      "table": "activity_locations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "activity_locations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "channel_members"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "table": "channel_members"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "table": "channel_members"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "joined",
+      "entityType": "columns",
+      "table": "channel_members"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "table": "channels"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "channels"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "owner",
+      "entityType": "columns",
+      "table": "channels"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "channels"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "otp_hash",
+      "entityType": "columns",
+      "table": "otp_logins"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "table": "otp_logins"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "table": "otp_logins"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "otp_logins"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "expires",
+      "entityType": "columns",
+      "table": "otp_logins"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "expires",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "table": "users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "color",
+      "entityType": "columns",
+      "table": "users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created",
+      "entityType": "columns",
+      "table": "users"
+    },
+    {
+      "columns": ["channel_id"],
+      "tableTo": "channels",
+      "columnsTo": ["channel_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activities_channel_id_channels_channel_id_fk",
+      "entityType": "fks",
+      "table": "activities"
+    },
+    {
+      "columns": ["created_by"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "name": "fk_activities_created_by_users_user_id_fk",
+      "entityType": "fks",
+      "table": "activities"
+    },
+    {
+      "columns": ["activity_id"],
+      "tableTo": "activities",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activity_availability_activity_id_activities_id_fk",
+      "entityType": "fks",
+      "table": "activity_availability"
+    },
+    {
+      "columns": ["user_id"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activity_availability_user_id_users_user_id_fk",
+      "entityType": "fks",
+      "table": "activity_availability"
+    },
+    {
+      "columns": ["booking_id"],
+      "tableTo": "activity_bookings",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activity_booking_attendees_booking_id_activity_bookings_id_fk",
+      "entityType": "fks",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "columns": ["user_id"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activity_booking_attendees_user_id_users_user_id_fk",
+      "entityType": "fks",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "columns": ["activity_id"],
+      "tableTo": "activities",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activity_bookings_activity_id_activities_id_fk",
+      "entityType": "fks",
+      "table": "activity_bookings"
+    },
+    {
+      "columns": ["created_by"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "name": "fk_activity_bookings_created_by_users_user_id_fk",
+      "entityType": "fks",
+      "table": "activity_bookings"
+    },
+    {
+      "columns": ["location_id"],
+      "tableTo": "activity_locations",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_activity_bookings_location_id_activity_locations_id_fk",
+      "entityType": "fks",
+      "table": "activity_bookings"
+    },
+    {
+      "columns": ["activity_id"],
+      "tableTo": "activities",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_activity_locations_activity_id_activities_id_fk",
+      "entityType": "fks",
+      "table": "activity_locations"
+    },
+    {
+      "columns": ["channel_id"],
+      "tableTo": "channels",
+      "columnsTo": ["channel_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_channel_members_channel_id_channels_channel_id_fk",
+      "entityType": "fks",
+      "table": "channel_members"
+    },
+    {
+      "columns": ["user_id"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_channel_members_user_id_users_user_id_fk",
+      "entityType": "fks",
+      "table": "channel_members"
+    },
+    {
+      "columns": ["owner"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "name": "fk_channels_owner_users_user_id_fk",
+      "entityType": "fks",
+      "table": "channels"
+    },
+    {
+      "columns": ["user_id"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_otp_logins_user_id_users_user_id_fk",
+      "entityType": "fks",
+      "table": "otp_logins"
+    },
+    {
+      "columns": ["channel_id"],
+      "tableTo": "channels",
+      "columnsTo": ["channel_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_otp_logins_channel_id_channels_channel_id_fk",
+      "entityType": "fks",
+      "table": "otp_logins"
+    },
+    {
+      "columns": ["user_id"],
+      "tableTo": "users",
+      "columnsTo": ["user_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_sessions_user_id_users_user_id_fk",
+      "entityType": "fks",
+      "table": "sessions"
+    },
+    {
+      "columns": ["channel_id"],
+      "tableTo": "channels",
+      "columnsTo": ["channel_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_sessions_channel_id_channels_channel_id_fk",
+      "entityType": "fks",
+      "table": "sessions"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "activities_pk",
+      "table": "activities",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "activity_availability_pk",
+      "table": "activity_availability",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "activity_booking_attendees_pk",
+      "table": "activity_booking_attendees",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "activity_bookings_pk",
+      "table": "activity_bookings",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "activity_locations_pk",
+      "table": "activity_locations",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "channel_members_pk",
+      "table": "channel_members",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["channel_id"],
+      "nameExplicit": false,
+      "name": "channels_pk",
+      "table": "channels",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["otp_hash"],
+      "nameExplicit": false,
+      "name": "otp_logins_pk",
+      "table": "otp_logins",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "sessions_pk",
+      "table": "sessions",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["user_id"],
+      "nameExplicit": false,
+      "name": "users_pk",
+      "table": "users",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "channel_id",
+          "isExpression": false
+        },
+        {
+          "value": "archived",
+          "isExpression": false
+        },
+        {
+          "value": "created",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "activities_channel_archived_created",
+      "entityType": "indexes",
+      "table": "activities"
+    },
+    {
+      "columns": [
+        {
+          "value": "activity_id",
+          "isExpression": false
+        },
+        {
+          "value": "user_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "activity_availability_activity_user",
+      "entityType": "indexes",
+      "table": "activity_availability"
+    },
+    {
+      "columns": [
+        {
+          "value": "booking_id",
+          "isExpression": false
+        },
+        {
+          "value": "user_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "activity_booking_attendees_booking_user",
+      "entityType": "indexes",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "columns": [
+        {
+          "value": "activity_id",
+          "isExpression": false
+        },
+        {
+          "value": "date",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "activity_bookings_activity_date",
+      "entityType": "indexes",
+      "table": "activity_bookings"
+    },
+    {
+      "columns": [
+        {
+          "value": "activity_id",
+          "isExpression": false
+        },
+        {
+          "value": "name",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": "\"activity_locations\".\"archived\" = 0",
+      "origin": "manual",
+      "name": "activity_locations_activity_name",
+      "entityType": "indexes",
+      "table": "activity_locations"
+    },
+    {
+      "columns": [
+        {
+          "value": "channel_id",
+          "isExpression": false
+        },
+        {
+          "value": "user_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "channel_members_channel_user",
+      "entityType": "indexes",
+      "table": "channel_members"
+    },
+    {
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "channel_members_user",
+      "entityType": "indexes",
+      "table": "channel_members"
+    },
+    {
+      "columns": [
+        {
+          "value": "expires",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "otp_logins_expires",
+      "entityType": "indexes",
+      "table": "otp_logins"
+    },
+    {
+      "columns": [
+        {
+          "value": "expires",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "sessions_expires",
+      "entityType": "indexes",
+      "table": "sessions"
+    },
+    {
+      "value": "\"persistent\" = 0 OR \"end_time\" IS NULL",
+      "name": "activities_persistent_no_end_time",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"persistent\" = 1 OR \"end_time\" IS NOT NULL",
+      "name": "activities_oneoff_has_end_time",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"end_time\" IS NULL OR \"end_time\" GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]Z'",
+      "name": "activities_end_time_utc",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"suggested_dates\" IS NULL OR (json_valid(\"suggested_dates\") AND json_array_length(\"suggested_dates\") > 0)",
+      "name": "activities_suggested_dates_json",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"slot_granularity\" IN ('day', 'hourly')",
+      "name": "activities_slot_granularity_valid",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"persistent\" = 0 OR \"suggested_dates\" IS NULL",
+      "name": "activities_persistent_no_suggested_dates",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"ideal_member_count\" IS NULL OR \"ideal_member_count\" > 0",
+      "name": "activities_ideal_member_count_positive",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"max_member_count\" IS NULL OR \"max_member_count\" > 0",
+      "name": "activities_max_member_count_positive",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "\"ideal_member_count\" IS NULL OR \"max_member_count\" IS NULL OR \"ideal_member_count\" <= \"max_member_count\"",
+      "name": "activities_ideal_within_max",
+      "entityType": "checks",
+      "table": "activities"
+    },
+    {
+      "value": "json_valid(\"slots\") AND json_type(\"slots\") = 'array'",
+      "name": "activity_availability_slots_json",
+      "entityType": "checks",
+      "table": "activity_availability"
+    },
+    {
+      "value": "\"declined\" = 0 OR json_array_length(\"slots\") = 0",
+      "name": "activity_availability_declined_no_slots",
+      "entityType": "checks",
+      "table": "activity_availability"
+    },
+    {
+      "value": "\"declined\" = 0 OR \"plus_one\" = 0",
+      "name": "activity_availability_declined_no_plus_one",
+      "entityType": "checks",
+      "table": "activity_availability"
+    },
+    {
+      "value": "(\"user_id\" IS NOT NULL AND \"name\" IS NULL) OR (\"user_id\" IS NULL AND length(trim(\"name\")) > 0)",
+      "name": "activity_booking_attendees_user_or_name",
+      "entityType": "checks",
+      "table": "activity_booking_attendees"
+    },
+    {
+      "value": "\"date\" GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'",
+      "name": "activity_bookings_date_format",
+      "entityType": "checks",
+      "table": "activity_bookings"
+    },
+    {
+      "value": "\"location_id\" IS NULL OR \"location\" = ''",
+      "name": "activity_bookings_location_xor",
+      "entityType": "checks",
+      "table": "activity_bookings"
+    },
+    {
+      "value": "\"from\" GLOB '[0-2][0-9]:[0-5][0-9]' AND \"to\" GLOB '[0-2][0-9]:[0-5][0-9]'",
+      "name": "activity_bookings_time_format",
+      "entityType": "checks",
+      "table": "activity_bookings"
+    },
+    {
+      "value": "\"from\" < \"to\"",
+      "name": "activity_bookings_from_before_to",
+      "entityType": "checks",
+      "table": "activity_bookings"
+    },
+    {
+      "value": "length(trim(\"name\")) > 0",
+      "name": "activity_locations_name_not_empty",
+      "entityType": "checks",
+      "table": "activity_locations"
+    },
+    {
+      "value": "length(trim(\"maps_url\")) > 0",
+      "name": "activity_locations_maps_url_not_empty",
+      "entityType": "checks",
+      "table": "activity_locations"
+    },
+    {
+      "value": "length(\"otp_hash\") = 64 AND \"otp_hash\" NOT GLOB '*[^a-f0-9]*'",
+      "name": "otp_hash_sha256_hex",
+      "entityType": "checks",
+      "table": "otp_logins"
+    },
+    {
+      "value": "\"color\" GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'",
+      "name": "users_color_hex",
+      "entityType": "checks",
+      "table": "users"
+    }
+  ],
+  "renames": []
+}

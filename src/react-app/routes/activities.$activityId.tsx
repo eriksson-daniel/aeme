@@ -20,7 +20,7 @@ import { isRespondByPassed } from "../lib/activity-state.ts";
 import { guestWouldExceedMax, isSlotFull, respondersBySlot, slotKey } from "../lib/responders.ts";
 import { useActivitiesQuery } from "../queries/activities.ts";
 import { useUpsertAvailabilityMutation } from "../queries/availability.ts";
-import { useSessionQuery } from "../queries/session.ts";
+import { useSessionQuery, useViewer } from "../queries/session.ts";
 
 // Matches the ongoing board's autosave, so a toggle on either surface
 // behaves the same.
@@ -45,6 +45,7 @@ const ActivityDetail = () => {
   const { activityId } = Route.useParams();
   const activities = useActivitiesQuery();
   const session = useSessionQuery();
+  const viewer = useViewer();
   const upsertAvailability = useUpsertAvailabilityMutation();
   const navigate = useNavigate();
 
@@ -264,7 +265,7 @@ const ActivityDetail = () => {
             onChange={handleChange}
             readOnly={closed}
             responders={responders}
-            viewerId={viewerId}
+            viewer={viewer}
             bookedSlots={activity.bookedSlots}
             bookings={activity.bookings}
             idealMemberCount={activity.idealMemberCount}
